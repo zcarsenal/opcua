@@ -3,6 +3,7 @@ package com.weikle.opcua.test;
 import com.google.common.collect.Lists;
 import com.weikle.opcua.WeikleOpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.sdk.client.OpcUaSession;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscriptionManager;
@@ -48,8 +49,11 @@ public class SubscriptionFinal implements WeikleOpcUaClient {
     @Override
     public void run(OpcUaClient client, CompletableFuture<OpcUaClient> future) throws Exception {
         //connect server
-        client.connect().get();
-
+        OpcUaSession opcUaSession = client.getSession().get();
+        if (null == opcUaSession) {
+            //创建连接
+            client.connect().get();
+        }
         UaSubscription.NotificationListener notificationListener = new UaSubscription.NotificationListener() {
             @Override
             public void onDataChangeNotification(UaSubscription subscription, List<UaMonitoredItem> items, List<DataValue> values, DateTime publishTime) {

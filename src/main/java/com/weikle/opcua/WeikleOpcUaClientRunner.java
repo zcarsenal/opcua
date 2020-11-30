@@ -13,7 +13,6 @@ import java.nio.file.Paths;
 import java.security.Security;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
@@ -90,6 +89,7 @@ public class WeikleOpcUaClientRunner {
             });
 
             try {
+                client.connect().get();
                 weikleOpcUaClient.run(client, future);
                 //future.get(150, TimeUnit.SECONDS);
                 future.get();

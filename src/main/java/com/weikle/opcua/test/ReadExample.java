@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableList;
 import com.weikle.opcua.WeikleOpcUaClient;
 import com.weikle.opcua.WeikleOpcUaClientRunner;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.sdk.client.OpcUaSession;
 import org.eclipse.milo.opcua.sdk.client.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
@@ -39,7 +40,11 @@ public class ReadExample implements WeikleOpcUaClient {
     @Override
     public void run(OpcUaClient client, CompletableFuture<OpcUaClient> future) throws Exception {
         // synchronous connect
-        client.connect().get();
+        OpcUaSession opcUaSession = client.getSession().get();
+        if (null == opcUaSession) {
+            //创建连接
+            client.connect().get();
+        }
 
         // synchronous read request via VariableNode
 //        UaVariableNode node = client.getAddressSpace().getVariableNode(Identifiers.Server_ServerStatus_StartTime);

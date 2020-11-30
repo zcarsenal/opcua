@@ -13,6 +13,7 @@ package com.weikle.opcua.test;
 import com.weikle.opcua.WeikleOpcUaClient;
 import com.weikle.opcua.WeikleOpcUaClientRunner;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.sdk.client.OpcUaSession;
 import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.ServerTypeNode;
 import org.eclipse.milo.opcua.sdk.client.model.nodes.variables.ServerStatusTypeNode;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
@@ -39,7 +40,11 @@ public class ReadNodeExample implements WeikleOpcUaClient {
     @Override
     public void run(OpcUaClient client, CompletableFuture<OpcUaClient> future) throws Exception {
         // synchronous connect
-        client.connect().get();
+        OpcUaSession opcUaSession = client.getSession().get();
+        if (null == opcUaSession) {
+            //创建连接
+            client.connect().get();
+        }
 
         // Get a typed reference to the Server object: ServerNode
         ServerTypeNode serverNode = (ServerTypeNode) client.getAddressSpace().getObjectNode(

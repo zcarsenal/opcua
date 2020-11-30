@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableList;
 import com.weikle.opcua.WeikleOpcUaClient;
 import com.weikle.opcua.WeikleOpcUaClientRunner;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.sdk.client.OpcUaSession;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
@@ -37,7 +38,11 @@ public class WriteExample implements WeikleOpcUaClient {
     @Override
     public void run(OpcUaClient client, CompletableFuture<OpcUaClient> future) throws Exception {
         // synchronous connect
-        client.connect().get();
+        OpcUaSession opcUaSession = client.getSession().get();
+        if (null == opcUaSession) {
+            //创建连接
+            client.connect().get();
+        }
 
         List<NodeId> nodeIds = ImmutableList.of(new NodeId(2, "T14.Shlv.T1.Indicator18_1_2"));
 
@@ -67,7 +72,7 @@ public class WriteExample implements WeikleOpcUaClient {
                 logger.info("Wrote '{}' to nodeId={}", v, nodeIds.get(0));
             }
 
-            Thread.sleep(1000);
+            Thread.sleep(200);
         }
         }
         // future.complete(client);

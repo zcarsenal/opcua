@@ -13,6 +13,7 @@ package com.weikle.opcua.test;
 import com.weikle.opcua.WeikleOpcUaClient;
 import com.weikle.opcua.WeikleOpcUaClientRunner;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.sdk.client.OpcUaSession;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.ManagedDataItem;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.ManagedSubscription;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
@@ -40,7 +41,11 @@ public class ManagedSubscriptionDataExample implements WeikleOpcUaClient {
 
     @Override
     public void run(OpcUaClient client, CompletableFuture<OpcUaClient> future) throws Exception {
-        client.connect().get();
+        OpcUaSession opcUaSession = client.getSession().get();
+        if (null == opcUaSession) {
+            //创建连接
+            client.connect().get();
+        }
 
         ManagedSubscription subscription = ManagedSubscription.create(client,50.0);
 

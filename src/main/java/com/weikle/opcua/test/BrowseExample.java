@@ -13,6 +13,7 @@ package com.weikle.opcua.test;
 import com.weikle.opcua.WeikleOpcUaClient;
 import com.weikle.opcua.WeikleOpcUaClientRunner;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.sdk.client.OpcUaSession;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseDirection;
@@ -44,7 +45,11 @@ public class BrowseExample implements WeikleOpcUaClient {
     @Override
     public void run(OpcUaClient client, CompletableFuture<OpcUaClient> future) throws Exception {
         // synchronous connect
-        client.connect().get();
+        OpcUaSession opcUaSession = client.getSession().get();
+        if (null == opcUaSession) {
+            //创建连接
+            client.connect().get();
+        }
 
         // start browsing at root folder
         browseNode("", client, Identifiers.RootFolder);
