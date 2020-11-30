@@ -24,4 +24,8 @@ public interface WeikleOpcUaConfig {
     default IdentityProvider getIdentityProvider() {
         return new AnonymousProvider();
     }
+
+    default Double requestedPublishingInterval(){
+        return 100.0;
+    }
 }

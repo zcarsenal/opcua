@@ -105,11 +105,7 @@ public class WeikleOpcUaUtil {
 
     public void subscription(List<String> itemNames, Consumer<ItemChangeData> consumer) throws ExecutionException, InterruptedException {
         //connect server
-        OpcUaSession opcUaSession = client.getSession().get();
-        if (null == opcUaSession) {
-            //创建连接
-            client.connect().get();
-        }
+        reconnect();
         UaSubscription.NotificationListener notificationListener = new UaSubscription.NotificationListener() {
             @Override
             public void onDataChangeNotification(UaSubscription subscription, List<UaMonitoredItem> items, List<DataValue> values, DateTime publishTime) {
@@ -141,7 +137,7 @@ public class WeikleOpcUaUtil {
     private void createItemAndWait(OpcUaClient client, UaSubscription.NotificationListener notificationListener, List<String> itemNames) throws InterruptedException, ExecutionException {
 
         // create a subscription and a monitored item
-        UaSubscription subscription = client.getSubscriptionManager().createSubscription(40.0).get();
+        UaSubscription subscription = client.getSubscriptionManager().createSubscription(weikleOpcUaConfig.requestedPublishingInterval()).get();
         subscription.addNotificationListener(notificationListener);
         List<MonitoredItemCreateRequest> requests = Lists.newArrayList();
         for (String itemName : itemNames) {
@@ -152,7 +148,7 @@ public class WeikleOpcUaUtil {
             UInteger clientHandle = subscription.nextClientHandle();
             MonitoringParameters parameters = new MonitoringParameters(
                     clientHandle,
-                    40.0,     // sampling interval
+                    weikleOpcUaConfig.requestedPublishingInterval(),     // sampling interval
                     null,       // filter, null means use default
                     uint(10),   // queue size
                     true        // discard oldest
@@ -161,8 +157,8 @@ public class WeikleOpcUaUtil {
             requests.add(request);
         }
 
-        lock.lock();
         try {
+            lock.lock();
             List<UaMonitoredItem> items = subscription.createMonitoredItems(TimestampsToReturn.Both, requests).get();
             for (UaMonitoredItem item : items) {
                 if (item.getStatusCode().isGood()) {
@@ -181,12 +177,7 @@ public class WeikleOpcUaUtil {
 
 
     public void write(String itemName,Object value) throws ExecutionException, InterruptedException {
-        // synchronous connect
-        OpcUaSession opcUaSession = client.getSession().get();
-        if (null == opcUaSession) {
-            //创建连接
-            client.connect().get();
-        }
+        reconnect();
         NodeId nodeId = new NodeId(2, itemName);
         Variant v = new Variant(value);
         DataValue dv = new DataValue(v, null, null);
@@ -206,12 +197,17 @@ public class WeikleOpcUaUtil {
 
     }
 
-    public Object syncReadNodeValue(String itemName) throws Exception {
+    private void reconnect() throws InterruptedException, ExecutionException {
+        // synchronous connect
         OpcUaSession opcUaSession = client.getSession().get();
         if (null == opcUaSession) {
             //创建连接
             client.connect().get();
         }
+    }
+
+    public Object syncReadNodeValue(String itemName) throws Exception {
+        reconnect();
         UaVariableNode node = client.getAddressSpace().getVariableNode(new NodeId(2, itemName));
         DataValue value = node.readValue();
 
@@ -220,11 +216,7 @@ public class WeikleOpcUaUtil {
     }
 
     public Object asyncReadNodeValue(String itemName) throws Exception {
-        OpcUaSession opcUaSession = client.getSession().get();
-        if (null == opcUaSession) {
-            //创建连接
-            client.connect().get();
-        }
+        reconnect();
         AtomicReference<Object> value = new AtomicReference<>();
         // asynchronous read request
         readServerStateAndTime(client,new NodeId(2, itemName)).thenAccept(values -> {
