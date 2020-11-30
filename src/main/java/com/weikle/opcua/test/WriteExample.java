@@ -41,6 +41,9 @@ public class WriteExample implements WeikleOpcUaClient {
 
         List<NodeId> nodeIds = ImmutableList.of(new NodeId(2, "T14.Shlv.T1.Indicator18_1_2"));
 
+        while(true){
+
+
         for (int i = 0; i < 2; i++) {
             Variant v = null;
             if(i == 0){
@@ -63,9 +66,11 @@ public class WriteExample implements WeikleOpcUaClient {
             if (status.isGood()) {
                 logger.info("Wrote '{}' to nodeId={}", v, nodeIds.get(0));
             }
-        }
 
-        future.complete(client);
+            Thread.sleep(1000);
+        }
+        }
+        // future.complete(client);
     }
 
 }

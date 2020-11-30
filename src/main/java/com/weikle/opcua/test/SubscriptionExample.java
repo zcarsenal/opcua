@@ -15,11 +15,14 @@ import com.weikle.opcua.WeikleOpcUaClientRunner;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
+import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscriptionManager;
 import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
+import org.eclipse.milo.opcua.stack.core.Stack;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MonitoringMode;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
@@ -31,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 
 import static com.google.common.collect.Lists.newArrayList;
@@ -52,7 +56,7 @@ public class SubscriptionExample implements WeikleOpcUaClient {
         client.connect().get();
 
         // create a subscription @ 1000ms
-        UaSubscription subscription = client.getSubscriptionManager().createSubscription(1).get();
+        UaSubscription subscription = client.getSubscriptionManager().createSubscription(50).get();
 
         // subscribe to the Value attribute of the server's CurrentTime node
         ReadValueId readValueId = new ReadValueId(
@@ -67,7 +71,7 @@ public class SubscriptionExample implements WeikleOpcUaClient {
 
         MonitoringParameters parameters = new MonitoringParameters(
             clientHandle,
-            1.0,     // sampling interval
+            50.0,     // sampling interval
             null,       // filter, null means use default
             uint(10),   // queue size
             true        // discard oldest
@@ -101,9 +105,24 @@ public class SubscriptionExample implements WeikleOpcUaClient {
             }
         }
 
-        // let the example run for 5 seconds then terminate
-        Thread.sleep(50000);
-        future.complete(client);
+    // let the example run for 5 seconds then terminate
+    // Thread.sleep(50000);
+    // future.complete(client);
+
+    client
+        .getSubscriptionManager()
+        .addSubscriptionListener(
+            new UaSubscriptionManager.SubscriptionListener() {
+              @Override
+              public void onSubscriptionTransferFailed(
+                  UaSubscription subscription, StatusCode statusCode) {
+                Stack.sharedExecutor()
+                    .execute(
+                        () -> {
+                          logger.info("111111111111111111111111111111111111");
+                        });
+              }
+            });
     }
 
     private void onSubscriptionValue(UaMonitoredItem item, DataValue value) {

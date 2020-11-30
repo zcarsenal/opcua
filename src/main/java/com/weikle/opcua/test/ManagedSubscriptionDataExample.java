@@ -17,6 +17,7 @@ import org.eclipse.milo.opcua.sdk.client.subscriptions.ManagedDataItem;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.ManagedSubscription;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +42,11 @@ public class ManagedSubscriptionDataExample implements WeikleOpcUaClient {
     public void run(OpcUaClient client, CompletableFuture<OpcUaClient> future) throws Exception {
         client.connect().get();
 
-        ManagedSubscription subscription = ManagedSubscription.create(client);
+        ManagedSubscription subscription = ManagedSubscription.create(client,50.0);
+
+        ManagedDataItem dataItem = subscription.createDataItem(
+                new NodeId(2,"T14.Shlv.T1.Indicator18_1_2")
+        );
 
         subscription.addDataChangeListener((items, values) -> {
             for (int i = 0; i < items.size(); i++) {
@@ -52,17 +57,13 @@ public class ManagedSubscriptionDataExample implements WeikleOpcUaClient {
             }
         });
 
-        ManagedDataItem dataItem = subscription.createDataItem(
-            new NodeId(2,"T14.Shlv.T1.Indicator18_1_2")
-        );
-
         if (dataItem.getStatusCode().isGood()) {
             logger.info("item created for nodeId={}", dataItem.getNodeId());
 
             // let the example run for 5 seconds before completing
-            Thread.sleep(5000);
+            //Thread.sleep(5000);
 
-            dataItem.delete();
+            //dataItem.delete();
         } else {
             logger.warn(
                 "failed to create item for nodeId={} (status={})",

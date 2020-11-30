@@ -91,10 +91,18 @@ public class WeikleOpcUaClientRunner {
 
             try {
                 weikleOpcUaClient.run(client, future);
-                future.get(150, TimeUnit.SECONDS);
+                //future.get(150, TimeUnit.SECONDS);
+                future.get();
             } catch (Throwable t) {
                 logger.error("Error running client example: {}", t.getMessage(), t);
-                future.completeExceptionally(t);
+                while(true){
+                    try{
+                        weikleOpcUaClient.run(client, future);
+                    }catch (Exception e){
+                        logger.error("reconnect fail");
+                    }
+                }
+                //future.completeExceptionally(t);
             }
         } catch (Throwable t) {
             logger.error("Error getting client: {}", t.getMessage(), t);
