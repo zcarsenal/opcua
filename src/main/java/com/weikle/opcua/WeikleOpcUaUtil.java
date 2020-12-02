@@ -11,13 +11,11 @@ import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscriptionManager
 import org.eclipse.milo.opcua.sdk.client.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.Stack;
+import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.*;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
-import org.eclipse.milo.opcua.stack.core.types.enumerated.MonitoringMode;
-import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
-import org.eclipse.milo.opcua.stack.core.types.structured.MonitoredItemCreateRequest;
-import org.eclipse.milo.opcua.stack.core.types.structured.MonitoringParameters;
-import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.*;
+import org.eclipse.milo.opcua.stack.core.types.structured.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,7 +101,15 @@ public class WeikleOpcUaUtil {
         );
     }
 
-    public void subscription(List<String> itemNames, Consumer<ItemChangeData> consumer) throws ExecutionException, InterruptedException {
+    public List<NodeId> obtainAllNodeIds(String path) {
+        reconnect();
+        // start browsing at root folder
+        List<NodeId> nodeIds = Lists.newArrayList();
+        populateNodes(path,nodeIds);
+        return nodeIds;
+    }
+
+    public void subscription(List<String> itemNames, Consumer<ItemChangeData> consumer){
         //connect server
         reconnect();
         UaSubscription.NotificationListener notificationListener = new UaSubscription.NotificationListener() {
@@ -121,23 +127,24 @@ public class WeikleOpcUaUtil {
         client.getSubscriptionManager().addSubscriptionListener(new UaSubscriptionManager.SubscriptionListener() {
             @Override
             public void onSubscriptionTransferFailed(UaSubscription subscription, StatusCode statusCode) {
-                Stack.sharedExecutor().execute(() -> {
-                    try {
-                        createItemAndWait(client,notificationListener,itemNames);
-                    } catch (InterruptedException | ExecutionException e) {
-                        logger.error("Error creating Subscription: {}", e.getMessage(), e);
-                    }
-                });
+                Stack.sharedExecutor().execute(() -> createItemAndWait(client,notificationListener,itemNames));
             }
         });
 
         createItemAndWait(client,notificationListener,itemNames);
     }
 
-    private void createItemAndWait(OpcUaClient client, UaSubscription.NotificationListener notificationListener, List<String> itemNames) throws InterruptedException, ExecutionException {
+    private void createItemAndWait(OpcUaClient client, UaSubscription.NotificationListener notificationListener, List<String> itemNames) {
 
         // create a subscription and a monitored item
-        UaSubscription subscription = client.getSubscriptionManager().createSubscription(weikleOpcUaConfig.requestedPublishingInterval()).get();
+        UaSubscription subscription = null;
+        try {
+            subscription = client.getSubscriptionManager().createSubscription(weikleOpcUaConfig.requestedPublishingInterval()).get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
         subscription.addNotificationListener(notificationListener);
         List<MonitoredItemCreateRequest> requests = Lists.newArrayList();
         for (String itemName : itemNames) {
@@ -170,6 +177,10 @@ public class WeikleOpcUaUtil {
                 }
             }
             notificationArrived.await(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
         } finally {
             lock.unlock();
         }
@@ -197,13 +208,19 @@ public class WeikleOpcUaUtil {
 
     }
 
-    private void reconnect() throws InterruptedException, ExecutionException {
+    private void reconnect() {
         // synchronous connect
-        OpcUaSession opcUaSession = client.getSession().get();
-        if (null == opcUaSession) {
-            //创建连接
-            client.connect().get();
-        }
+       try{
+           OpcUaSession opcUaSession = client.getSession().get();
+           if (null == opcUaSession) {
+               //创建连接
+               client.connect().get();
+           }
+       } catch (InterruptedException e) {
+           e.printStackTrace();
+       } catch (ExecutionException e) {
+           e.printStackTrace();
+       }
     }
 
     public Object syncReadNodeValue(String itemName) throws Exception {
@@ -231,6 +248,26 @@ public class WeikleOpcUaUtil {
     private CompletableFuture<List<DataValue>> readServerStateAndTime(OpcUaClient client,NodeId node) {
         List<NodeId> nodeIds = ImmutableList.of(node);
         return client.readValues(0.0, TimestampsToReturn.Both,nodeIds);
+    }
+
+    public void populateNodes(String browse, List<NodeId> nodeIds) {
+        try {
+            NodeId nodeId = new NodeId(2, browse);
+            List<ReferenceDescription> nodes = client
+                    .getAddressSpace()
+                    .browse(nodeId);
+            for (ReferenceDescription node : nodes) {
+                // recursively browse to children
+                populateNodes(String.valueOf(node.getNodeId().getIdentifier()), nodeIds);
+                try {
+                    nodeIds.add(node.getNodeId().toNodeIdOrThrow(client.getNamespaceTable()));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        } catch (UaException e) {
+            e.printStackTrace();
+        }
     }
 
 }
