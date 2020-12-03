@@ -48,7 +48,7 @@ public class ReadExample implements WeikleOpcUaClient {
 
         // synchronous read request via VariableNode
 //        UaVariableNode node = client.getAddressSpace().getVariableNode(Identifiers.Server_ServerStatus_StartTime);
-        UaVariableNode node = client.getAddressSpace().getVariableNode(new NodeId(2, "T14.Shlv.T1.Indicator18_1_2"));
+        UaVariableNode node = client.getAddressSpace().getVariableNode(new NodeId(1, "t|Door_MCP.ST_FPS"));
         DataValue value = node.readValue();
 
         logger.info("StartTime={}", value.getValue().getValue());

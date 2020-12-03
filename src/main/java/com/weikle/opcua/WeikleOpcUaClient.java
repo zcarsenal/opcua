@@ -12,7 +12,7 @@ import java.util.function.Predicate;
 public interface WeikleOpcUaClient {
 
     default String getEndpointUrl() {
-        return "opc.tcp://192.168.150.243:49320";
+        return "opc.tcp://192.168.150.96:4862";
     }
 
     default Predicate<EndpointDescription> endpointFilter() {

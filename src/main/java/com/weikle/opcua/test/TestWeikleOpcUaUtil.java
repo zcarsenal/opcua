@@ -16,23 +16,27 @@ public class TestWeikleOpcUaUtil {
   private static final Logger logger = LoggerFactory.getLogger(TestWeikleOpcUaUtil.class);
 
   public static void main(String[] args) throws Exception {
-      WeikleOpcUaConfig weikleOpcUaConfig = new DefaultWeikleOpcUaConfig();
+      WeikleOpcUaConfig weikleOpcUaConfig = new WeikleOpcUaConfig() {
+          @Override
+          public String getEndpointUrl() {
+              return "opc.tcp://192.168.150.96:4862";
+          }
+      };
       WeikleOpcUaUtil weikleOpcUaUtil = new WeikleOpcUaUtil(weikleOpcUaConfig);
-      Object o = weikleOpcUaUtil.asyncReadNodeValue("T14.Shlv.T1.Indicator18_1_2");
-      System.out.println(o);
-      weikleOpcUaUtil.write("T14.Shlv.T1.Indicator18_1_2",true);
-      Object o1 = weikleOpcUaUtil.syncReadNodeValue("T14.Shlv.T1.Indicator18_1_2");
-      System.out.println(o1);
 
-      List<NodeId> strings = weikleOpcUaUtil.obtainAllNodeIds("T14.Shlv");
+      List<NodeId> strings = weikleOpcUaUtil.obtainAllNodeIds("t|");
       logger.info("{}",strings);
 
-    weikleOpcUaUtil.subscription(
-        strings.stream().map(node->node.getIdentifier()+"").collect(Collectors.toList()),
-            itemChangeData -> logger.info(
-                "subscription value received: item={}, value={}",
-                itemChangeData.getNodeId(),
-                itemChangeData.getValue()));
+      Object o1 = weikleOpcUaUtil.syncReadNodeValue("t|Door_MCP.ST_FPS");
+      System.out.println(o1);
+
+
+//    weikleOpcUaUtil.subscription(
+//        strings.stream().map(node->node.getIdentifier()+"").collect(Collectors.toList()),
+//            itemChangeData -> logger.info(
+//                "subscription value received: item={}, value={}",
+//                itemChangeData.getNodeId(),
+//                itemChangeData.getValue()));
 
       while(true){
           Thread.sleep(100000);

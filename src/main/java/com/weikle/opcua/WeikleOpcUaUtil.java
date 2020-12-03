@@ -225,7 +225,7 @@ public class WeikleOpcUaUtil {
 
     public Object syncReadNodeValue(String itemName) throws Exception {
         reconnect();
-        UaVariableNode node = client.getAddressSpace().getVariableNode(new NodeId(2, itemName));
+        UaVariableNode node = client.getAddressSpace().getVariableNode(new NodeId(1, itemName));
         DataValue value = node.readValue();
 
         logger.info("node value={}",value.getValue().getValue());
@@ -252,7 +252,7 @@ public class WeikleOpcUaUtil {
 
     public void populateNodes(String browse, List<NodeId> nodeIds) {
         try {
-            NodeId nodeId = new NodeId(2, browse);
+            NodeId nodeId = new NodeId(1, browse);
             List<ReferenceDescription> nodes = client
                     .getAddressSpace()
                     .browse(nodeId);

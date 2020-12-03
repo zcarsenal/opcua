@@ -95,13 +95,6 @@ public class WeikleOpcUaClientRunner {
                 future.get();
             } catch (Throwable t) {
                 logger.error("Error running client example: {}", t.getMessage(), t);
-                while(true){
-                    try{
-                        weikleOpcUaClient.run(client, future);
-                    }catch (Exception e){
-                        logger.error("reconnect fail");
-                    }
-                }
                 //future.completeExceptionally(t);
             }
         } catch (Throwable t) {
